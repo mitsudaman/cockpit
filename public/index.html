@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>コックピット</title>
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#eff5f9; --bg-top:#ddeef8;
+  /* 一覧と詳細画面に共通の背景（G9）と、その上に直接のる文字・線の色 */
+  --page-bg:#222d34; --on-bg:#e4eef2; --on-bg-2:#b4c4cc; --on-bg-3:#7f949f; --bg-line:#36454d; --surface:#fff; --sunk:#e6eff4; --line:#d3e1e9; --line-2:#bccfdb;
+  --ink:#1b2730; --ink-2:#465a66; --ink-3:#738893;
+  --accent:#1a8fc0; --accent-soft:#dcf0f9;
+  --glass:rgb(255 255 255 / .62); --on-accent:#fff;
+  --s-investigating:#6a55b8; --s-investigating-bg:#e8e3f6;
+  --s-implementing:#2565b8; --s-implementing-bg:#dde8f7;
+  --s-review:#b07a12; --s-review-bg:#f6ecd4;
+  --s-verify:#c2502e; --s-verify-bg:#f8e3dc;
+  --s-release:#1e8c96; --s-release-bg:#d9eff1;
+  --s-report:#b03a78; --s-report-bg:#f6dfeb;
+  --s-hold:#76858a; --s-hold-bg:#e9edef;
+  --s-done:#2f7d4f; --s-done-bg:#dcefe3;
+  --flash:#fff3c4;
+  --sans:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --shadow:0 1px 2px rgb(30 90 130 / .06),0 6px 18px rgb(30 90 130 / .08);
+  --shadow-soft:0 1px 2px rgb(30 90 130 / .05);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    color-scheme:dark;
+    --bg:#0f1a20; --bg-top:#122631; --surface:#16242c; --sunk:#1c2d36; --line:#2b404b; --line-2:#3b5260;
+    --ink:#e3edf2; --ink-2:#a9bcc6; --ink-3:#7c919c;
+    --accent:#5cc1ea; --accent-soft:#143343;
+    --glass:rgb(22 36 44 / .6); --on-accent:#06212d;
+    --s-investigating:#a796ea; --s-investigating-bg:#2b2545;
+    --s-implementing:#7fb0f0; --s-implementing-bg:#1c2b40;
+    --s-review:#e0b35a; --s-review-bg:#382c14;
+    --s-verify:#ec8a68; --s-verify-bg:#3d241c;
+    --s-release:#4fbfc9; --s-release-bg:#16363a;
+    --s-report:#e889b9; --s-report-bg:#3b1f2e;
+    --s-hold:#7f9095; --s-hold-bg:#222d31;
+    --s-done:#6cc794; --s-done-bg:#183526;
+    --flash:#3a3414;
+    --shadow:0 1px 2px rgb(0 0 0 / .3),0 6px 18px rgb(0 0 0 / .3);
+    --shadow-soft:0 1px 2px rgb(0 0 0 / .25);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--page-bg);color:var(--ink);font:14px/1.65 var(--sans);min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0;line-height:1.35;text-wrap:balance}
+p{margin:0}
+
+/* 骨格: 左にサイドバー、右に見出しと一覧 */
+.shell{display:flex;min-height:100vh}
+.content{flex:1;min-width:0;display:flex;flex-direction:column}
+
+/* サイドバー（計器風。地に細い走査線） */
+.side{--side:#0d1a20;--side-line:#1f3540;--side-ink:#aebfc8;--side-dim:#5f7b88;--ok:#4fd18b;--ng:#ef6a5a;
+  width:236px;flex:none;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:18px 12px 14px;background:var(--side);color:var(--side-ink);
+  background-image:linear-gradient(rgb(95 208 245 / .035) 1px,transparent 1px);background-size:100% 4px}
+.logo{display:flex;align-items:center;gap:10px;padding:0 10px 18px;border-bottom:1px solid var(--side-line);margin-bottom:14px}
+.logo .home{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;border-radius:6px}
+.logo .home:hover h1{color:#5fd0f5}
+.logo .home:focus-visible{outline:2px solid #5fd0f5;outline-offset:4px}
+.logo h1{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.32em;color:#fff}
+.mark{width:24px;height:24px;flex:none;filter:drop-shadow(0 0 6px rgb(95 208 245 / .35))}
+.led{width:7px;height:7px;border-radius:50%;background:var(--side-dim);margin-left:auto}
+.led.on{background:var(--ok);box-shadow:0 0 0 3px rgb(79 209 139 / .18),0 0 10px var(--ok)}
+.led.off{background:var(--ng);box-shadow:0 0 10px var(--ng)}
+.inbox{max-height:34vh;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--side-line) transparent}
+.ws.item{font-weight:400;font-size:12.5px;letter-spacing:0;align-items:flex-start;padding:7px 10px}
+.ws.item::before{margin-top:6px}
+.ws.item span{min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.45}
+.ws.item em{flex:none;font-size:10.5px;margin-top:2px}
+.ws.item.new{color:#fff}
+.ws.item.new em{color:var(--cyan,#5fd0f5)}
+.badge[hidden]{display:none}
+.badge{display:inline-grid;place-items:center;min-width:18px;height:18px;margin-left:8px;padding:0 5px;border-radius:9px;background:#5fd0f5;color:#06212d;font-size:10.5px;letter-spacing:0;vertical-align:1px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgb(95 208 245 / .55)}50%{box-shadow:0 0 0 6px rgb(95 208 245 / 0)}}
+@media (prefers-reduced-motion:reduce){.badge{animation:none}}
+.links-sec{margin-top:22px;border-top:1px solid var(--side-line);padding-top:18px}
+.sec{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;color:var(--side-dim);padding:10px 10px 6px}
+.ws{--c:#9fb3bd;all:unset;box-sizing:border-box;position:relative;display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:8px;font-weight:700;font-size:13.5px;letter-spacing:.04em;color:var(--side-ink);cursor:pointer}
+.ws::before{content:"";width:7px;height:7px;border-radius:2px;background:var(--c);flex:none}
+.ws em{margin-left:auto;font-style:normal;font-family:var(--mono);font-size:12px;font-weight:400;color:var(--side-dim)}
+.ws:hover{background:rgb(255 255 255 / .04);color:#fff}
+.ws:focus-visible{outline:2px solid var(--c);outline-offset:1px}
+.ws[aria-selected=true]{background:linear-gradient(90deg,color-mix(in srgb,var(--c) 22%,transparent),transparent 85%);color:#fff}
+.ws[aria-selected=true]::after{content:"";position:absolute;left:-12px;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:var(--c);box-shadow:0 0 12px var(--c)}
+.ws[aria-selected=true] em{color:var(--c)}
+.ws.link::before{border-radius:50%;background:none;border:1.5px solid var(--c)}
+.ws.link em{font-size:11px}
+.foot{margin-top:auto;border-top:1px solid var(--side-line);padding:12px 10px 0;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--side-dim);display:flex;justify-content:space-between}
+.foot b{font-weight:600;color:var(--ok)}
+.foot b.off{color:var(--ng)}
+
+/* 切り替えボタン（詳細画面のボールなど） */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:5px 12px;cursor:pointer;color:var(--ink-2)}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--on-accent)}
+
+/* 見出しと計器盤: 暗い帯にレーダー（同心円と走査の光）。名前は照準の角括弧で囲む。色はディレクトリごと（--c） */
+.mh{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 28px;overflow:hidden;isolation:isolate;background:#0f1e25;color:#e4eef2;border-bottom:1px solid #22404d}
+.mh::before{content:"";position:absolute;z-index:-1;right:-60px;top:50%;width:420px;height:420px;transform:translateY(-50%);border-radius:50%;pointer-events:none;
+  background:repeating-radial-gradient(circle,transparent 0 38px,rgb(95 208 245 / .14) 38px 39px),conic-gradient(from 0deg,rgb(95 208 245 / .28),transparent 18%,transparent);opacity:.9}
+.mh::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,var(--c),transparent 50%);box-shadow:0 0 10px var(--c)}
+.ttl{position:relative;padding:6px 16px}
+.ttl::before,.ttl::after{content:"";position:absolute;width:12px;height:12px;border:2px solid var(--c)}
+.ttl::before{left:0;top:0;border-right:0;border-bottom:0}
+.ttl::after{right:0;bottom:0;border-left:0;border-top:0}
+.ttl small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.28em;color:#5f7b88}
+.ttl h2{font-size:24px;letter-spacing:.06em}
+.strip{margin-left:auto;display:flex;gap:26px;position:relative}
+.strip div{display:flex;flex-direction:column;align-items:flex-end}
+.strip small{font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;color:#6f8a96}
+.strip b{font-family:var(--mono);font-size:24px;line-height:1.1;font-variant-numeric:tabular-nums}
+.strip b.hl{color:color-mix(in srgb,var(--c) 60%,#fff);text-shadow:0 0 10px var(--c)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 12px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:700}
+
+/* ボード */
+body.wide main{max-width:none}
+main{color:var(--on-bg);width:100%;max-width:1400px;margin:0;padding:20px 28px 80px;display:flex;flex-direction:column;gap:28px}
+.group{display:flex;flex-direction:column;gap:12px}
+/* 1つのディレクトリだけ見ているときは見出しを出さないので、ALL と同じ高さからカードが始まるよう余白で合わせる */
+.group.solo{margin-top:41px}
+.group-h{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--bg-line);padding-bottom:6px}
+.group-h h2{font-size:16px}
+.group-h .path{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+.group-h .cnt,.sub-h .cnt{font-size:12px;color:var(--on-bg-3);margin-left:auto}
+.group-h .cnt b,.sub-h .cnt b{color:#5fd0f5}
+.sub{display:flex;flex-direction:column;gap:10px;margin-top:6px;padding-left:14px;border-left:3px solid var(--bg-line)}
+.sub-h{display:flex;align-items:baseline;gap:10px}
+.sub-h h3{font-size:14.5px}
+.sub-h h3::before{content:"› ";color:var(--on-bg-3)}
+.where{font-size:11.5px;color:var(--ink-3)}
+.note{font-size:13px;color:var(--on-bg-3)}
+details.stale{border-top:1px dashed var(--bg-line);padding-top:10px}
+details.stale>summary{cursor:pointer;font-size:13px;color:var(--on-bg-2);font-weight:700;list-style:none;display:flex;align-items:center;gap:8px;width:fit-content}
+details.stale>summary::before{content:"▸";color:var(--ink-3);transition:transform .15s}
+details.stale[open]>summary::before{transform:rotate(90deg)}
+details.stale>summary::-webkit-details-marker{display:none}
+details.stale .cards{margin-top:10px}
+.sl{color:var(--ink);list-style:none;margin:10px 0 0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+.sl li{display:flex;align-items:center;gap:12px;padding:8px 14px;border-top:1px solid var(--line);font-size:13px;cursor:pointer}
+.sl li:first-child{border-top:0}
+.sl li:hover,.sl li:focus-visible{background:var(--sunk);outline:none}
+.sl .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sl time{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+details.stale .card{opacity:.85}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.card{color:var(--ink);background:var(--surface);border:1px solid var(--line);border-top:2px solid var(--sc,var(--line-2));border-radius:4px 4px 10px 10px;box-shadow:var(--shadow-soft);padding:22px 18px 16px;display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:box-shadow .15s,transform .15s;text-align:left}
+.card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card.done{opacity:.6}
+.card.flash{animation:flash 2.4s ease-out}
+@keyframes flash{0%,30%{background:var(--flash)}100%{background:var(--surface)}}
+.card-top{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em}
+.card-top .cs{color:var(--sc);font-weight:700}
+.card-top .cb.me{color:var(--accent)}
+.card-top .cb.other{color:#d99a2b}
+.card h3{font-size:14.5px;text-wrap:pretty}
+.upd{margin-left:auto;color:var(--ink-3);white-space:nowrap}
+.meter{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:2px}
+.meter i{height:6px;border-radius:2px;background:var(--sunk)}
+.meter i.on{background:var(--sc)}
+.meter.hold i.on{background:var(--line-2)}
+.card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.04em}
+.card-foot b{color:var(--ink-2);font-weight:600}
+
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:1px 9px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* ステータス別 */
+.columns{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;align-items:flex-start}
+.col{flex:1 1 0;min-width:200px;background:color-mix(in srgb,var(--sunk) 75%,transparent);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:10px;min-height:120px}
+.col.empty{flex:0 0 auto;min-width:0;width:96px;opacity:.75}
+.col.empty .col-h{flex-direction:column;align-items:flex-start;gap:2px}
+.col.empty .col-h .cnt{margin-left:4px}
+.col-h{display:flex;align-items:center;gap:8px;padding:2px 4px}
+.col-h .cnt{font-size:12px;color:var(--ink-3);margin-left:auto}
+.col .card{box-shadow:none}
+.empty{color:var(--ink-3);font-size:13px;padding:24px;text-align:center;border:1px dashed var(--line);border-radius:10px}
+
+/* 詳細ドロワー */
+.detail{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--page-bg)}
+/* 詳細を開いている間は右のエリアを画面の高さに収め、レポートと右の欄をその中でスクロールさせる */
+body.detail-open .content{height:100vh;overflow:hidden}
+.mh[hidden],main[hidden]{display:none}
+.mh.case .back{position:relative;border:0;border-radius:8px;background:#1c3540;color:#cfe0e7;padding:5px 11px;font-size:15px;line-height:1;cursor:pointer}
+.mh.case .back:hover{background:#24414f;color:#fff}
+.mh.case .ttl{min-width:0;flex:0 1 auto}
+.mh.case .ttl h2{font-size:17px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mh.case .saved{position:relative;margin-left:auto}
+.mh.case .open{position:relative;font-size:12.5px;color:#5fd0f5;white-space:nowrap}
+/* 詳細画面のバーと右の欄は暗い計器側。中の部品は変数を暗い値に差し替えて合わせる */
+.drawer{color-scheme:dark;--bg:#0f1a20;--surface:#13262e;--sunk:#1c3540;--line:#22404d;--line-2:#3b5260;--ink:#e4eef2;--ink-2:#aebfc8;--ink-3:#6f8a96;
+  --accent:#5fd0f5;--accent-soft:#143343;--glass:#0d1a20;--on-accent:#06212d;--s-done:#6cc794;--s-done-bg:#183526;--s-verify:#ec8a68;color:var(--ink)}
+.detail[hidden]{display:none}
+.dv-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 420px}
+.dv-main{min-width:0;min-height:0;overflow:auto;padding:16px}
+#dvFrame{display:block;width:100%;height:100%;border:0;border-radius:10px;background:#f1f5f8;box-shadow:0 10px 30px rgb(0 0 0 / .35)}
+.dv-empty{max-width:760px;margin:0 auto;padding:28px 24px;display:flex;flex-direction:column;gap:12px}
+.dv-empty>h3{font-size:13px;color:var(--on-bg-3)}
+.md{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 24px;font-size:14px;line-height:1.8;display:flex;flex-direction:column;gap:10px;word-break:break-word}
+.md h3{font-size:16px;margin-top:8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.md h4{font-size:14.5px;margin-top:4px}
+.md>:first-child{margin-top:0}
+.md ul,.md ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:3px}
+.md li.sub{margin-left:1.2em;list-style:circle}
+.md code{font-family:var(--mono);font-size:.85em;background:var(--sunk);padding:1px 5px;border-radius:4px}
+.md pre{font-family:var(--mono);font-size:12.5px;background:var(--sunk);border-radius:8px;padding:10px 12px;margin:0;white-space:pre-wrap}
+.md a{color:var(--accent)}
+.md .wiki{font-size:.88em;background:var(--accent-soft);color:var(--accent);padding:0 6px;border-radius:4px}
+.md table{border-collapse:collapse;font-size:13px}
+.md th,.md td{border:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}
+.md th{background:var(--sunk)}
+details.memory .md{margin-top:8px;padding:14px 16px;font-size:13px}
+.drawer{background:#0f1e25;border-left:1px solid var(--line);overflow-y:auto;min-height:0}
+.drawer .d-sec>h3{font-family:var(--mono);font-size:11px;letter-spacing:.14em}
+.drawer-in{padding:18px 20px 60px;display:flex;flex-direction:column;gap:18px}
+.d-head{display:flex;gap:10px;align-items:flex-start}
+.d-head .eyebrow{font-size:12px;color:var(--ink-3)}
+.d-head textarea.title{display:block;font-size:19px;font-weight:700;line-height:1.45;border:1px solid transparent;border-radius:6px;padding:2px 6px;margin-left:-7px;width:calc(100% + 7px);min-height:0;resize:none;overflow:hidden;background:none}
+.d-head textarea.title:hover,.d-head textarea.title:focus{border-color:var(--line)}
+.d-sec{display:flex;flex-direction:column;gap:8px}
+.d-sec>h3{font-size:12.5px;color:var(--ink-3);font-weight:700;letter-spacing:.04em}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.drawer select,.drawer input[type=text],.drawer textarea{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px}
+.drawer textarea{width:100%;resize:vertical;min-height:60px;line-height:1.6}
+.drawer input[type=text]{min-width:0}
+.drawer .eyebrow{font-size:12px;color:var(--ink-3)}
+.next-box textarea{font-size:15px;line-height:1.6;border:0;border-left:3px solid var(--accent);border-radius:0;background:transparent;padding:4px 0 4px 12px;box-shadow:-4px 0 12px -6px var(--accent)}
+.next-box textarea:focus{outline:none;background:var(--surface)}
+.d-tabs{display:flex;gap:18px;border-bottom:1px solid var(--line)}
+.d-tabs button{border:0;background:none;padding:7px 0;color:var(--ink-3);cursor:pointer;font-size:13px}
+.d-tabs button:hover{color:var(--ink)}
+.d-tabs button[aria-selected=true]{color:var(--ink);box-shadow:inset 0 -2px 0 var(--accent)}
+.d-pane{display:flex;flex-direction:column;gap:12px}
+.d-pane .hint{font-size:12px;color:var(--ink-3)}
+.d-pane textarea.title{font-size:15px;font-weight:700;resize:none;overflow:hidden}
+.tl{list-style:none;margin:0 0 0 5px;padding:0 0 0 16px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.tl li{position:relative;font-size:13px}
+.tl li::before{content:"";position:absolute;left:-22px;top:5px;width:9px;height:9px;border-radius:50%;background:var(--bg);border:2px solid var(--accent)}
+.tl time{display:block;font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.steps li{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--line);border-radius:8px}
+.steps li.next{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.steps li.done .st-title{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--line-2)}
+.steps .no{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);width:1.5em}
+.steps .st-title{flex:1}
+.steps .who{font-size:11.5px;color:var(--ink-3)}
+.st-btn{border:0;border-radius:999px;font-size:11.5px;font-weight:700;padding:2px 10px;cursor:pointer;white-space:nowrap}
+.st-todo{background:var(--sunk);color:var(--ink-3)}
+.st-next{background:var(--accent-soft);color:var(--accent)}
+.st-done{background:var(--s-done-bg);color:var(--s-done)}
+.links{display:flex;flex-wrap:wrap;gap:6px}
+.links a,.links span{font-size:12.5px;background:var(--sunk);border-radius:4px;padding:2px 8px;color:var(--ink);text-decoration:none}
+.links a:hover{text-decoration:underline}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto}
+.log li{display:flex;gap:10px;font-size:13px;border-left:2px solid var(--line);padding-left:10px}
+.log time{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);white-space:nowrap;padding-top:1px}
+.mono{font-family:var(--mono);font-size:12px}
+details.memory summary{cursor:pointer;font-size:12.5px;color:var(--ink-3);font-weight:700}
+details.memory pre{white-space:pre-wrap;word-break:break-word;font:13px/1.7 var(--sans);background:var(--sunk);border-radius:8px;padding:12px 14px;margin:8px 0 0}
+.saved{font-size:12px;color:var(--s-done);opacity:0;transition:opacity .3s}
+.saved.show{opacity:1}
+
+
+/* VS Code のドック: 画面の下・真ん中に浮かぶ。押すとそのフォルダの VS Code のウィンドウが前に出る */
+.dock{position:fixed;left:calc(50% + 118px);bottom:16px;transform:translateX(-50%);z-index:50;display:flex;gap:30px;padding:12px 24px 10px;border-radius:20px;
+  background:rgb(13 26 32 / .78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgb(95 208 245 / .18);box-shadow:0 14px 40px rgb(0 0 0 / .45)}
+.dock[hidden],body.detail-open .dock{display:none}
+body.has-dock main{padding-bottom:120px}
+.app{all:unset;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
+.app:focus-visible .ic{outline:2px solid #5fd0f5;outline-offset:3px}
+.app .lbl{font-size:11.5px;font-weight:700;color:#e4eef2;white-space:nowrap;text-shadow:0 1px 2px rgb(0 0 0 / .5)}
+.ic{position:relative;width:56px;height:56px;border-radius:15px;display:grid;place-items:center;color:#fff;font:700 18px/1 var(--sans);letter-spacing:.02em;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--c) 78%,#fff) 0%,var(--c) 55%,color-mix(in srgb,var(--c) 70%,#000) 100%);
+  box-shadow:0 6px 16px rgb(0 0 0 / .35),inset 0 1px 0 rgb(255 255 255 / .35);transition:transform .18s cubic-bezier(.3,1.4,.5,1)}
+.ic.long{font-size:16px}
+.app:hover .ic{transform:translateY(-6px) scale(1.12)}
+@media (prefers-reduced-motion:reduce){.ic{transition:none}}
+
+@media (max-width:700px){
+  .dock{left:50%}
+  .shell{flex-direction:column}
+  .side{width:auto;height:auto;position:static}
+  .side .foot{display:none}
+  .mh,main{padding-inline:16px}
+  .strip{margin-left:0}
+  .cards{grid-template-columns:1fr}
+  .drawer-in{padding:16px}
+}
+@media (max-width:900px){
+  .dv-body{grid-template-columns:1fr;grid-template-rows:65vh auto;overflow-y:auto}
+  .drawer{border-left:0;border-top:1px solid var(--line);overflow:visible}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="side">
+  <div class="logo"><a class="home" id="homeLink" href="/" title="トップへ"><img class="mark" src="/assets/logo.png" alt=""><h1>COCKPIT</h1></a><i class="led" id="led"></i></div>
+  <div class="sec">WORKSPACE</div>
+  <nav id="dirTabs" role="tablist" aria-label="ディレクトリ"></nav>
+  <div class="sec links-sec" id="inboxSec" hidden>INBOX<b class="badge" id="inboxBadge" hidden></b></div>
+  <nav id="inbox" class="inbox" aria-label="Claudeから届いたもの"></nav>
+  <div class="sec links-sec" id="linksSec" hidden>LINKS</div>
+  <nav id="links" aria-label="リンク"></nav>
+  <div class="foot"><span>SYS <b id="sys">…</b></span><span id="clock"></span></div>
+</aside>
+<div class="content">
+  <header class="mh" id="mh"></header>
+  <header class="mh case" id="mhCase" hidden>
+    <button class="back" id="dvBack" aria-label="一覧へ戻る">←</button>
+    <div class="ttl"><small id="dvWhere"></small><h2 id="dvTitle"></h2></div>
+    <span class="saved" id="saved">✓ 保存しました</span>
+    <a class="open" id="dvTab" target="_blank" rel="noopener" hidden>レポートを別タブで開く ↗</a>
+  </header>
+  <main id="board"></main>
+  <nav class="dock" id="dock" aria-label="VS Code のウィンドウを前に出す" hidden></nav>
+  <div class="detail" id="detail" hidden aria-label="案件の詳細">
+    <div class="dv-body"><div class="dv-main" id="dvMain"></div><aside class="drawer" id="drawer" aria-label="工程と状況"></aside></div>
+  </div>
+</div>
+</div>
+
+<datalist id="projectList"></datalist>
+<datalist id="dirList"></datalist>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const state = {
+  statuses: [], dirLabels: {}, dirColors: {}, safe: false, cases: [], seen: new Map(), first: true,
+  view: 'dir', mine: false, showDone: false, dir: '', links: [], inbox: [], period: '14', q: '', openId: null, staleOpen: new Set(),
+};
+try {
+  const ui = JSON.parse(localStorage.getItem('case-board-ui') || '{}');
+  state.dir = ui.dir || '';
+} catch {}
+const saveUi = () => { try { localStorage.setItem('case-board-ui', JSON.stringify({ view: state.view, mine: state.mine, showDone: state.showDone, dir: state.dir, period: state.period })); } catch {} };
+// 検索中は期間に関係なく探せるようにする
+const isRecent = (c) => state.period === 'all' || state.q.trim() !== '' || (Date.now() - new Date(c.updated_at)) / 864e5 <= Number(state.period);
+
+const dirLabel = (d) => state.dirLabels[d] || (d ? d.split('/').filter(Boolean).pop() : 'ディレクトリ未設定');
+const byJa = (a, b) => a.localeCompare(b, 'ja');
+// ディレクトリは dirs.json に書いた順。書いていないものは後ろに名前順
+const dirRank = (d) => { const i = Object.keys(state.dirLabels).indexOf(d); return i < 0 ? Infinity : i; };
+const byDir = (a, b) => (dirRank(a) - dirRank(b)) || byJa(a, b);
+const DIR_COLORS = ['#1a8fc0', '#e07a3a', '#7a5cc8', '#2f9a6a', '#c8506e'];
+// 決まった色は data/dir-colors.json（ブランド色など）。そこにないものは順番の色
+const dirColor = (d, i) => state.dirColors[d] || DIR_COLORS[(dirRank(d) === Infinity ? i : dirRank(d)) % DIR_COLORS.length];
+const statusOf = (id) => state.statuses.find((s) => s.id === id) || { id, label: id };
+const pill = (id) => `<span class="pill" style="color:var(--s-${id});background:var(--s-${id}-bg)">${esc(statusOf(id).label)}</span>`;
+// 自分が動く案件が大半なので、目印は相手待ちのときだけ出す
+
+function ago(iso) {
+  const d = (Date.now() - new Date(iso)) / 1000;
+  if (d < 60) return 'たった今';
+  if (d < 3600) return `${Math.floor(d / 60)}分前`;
+  if (d < 86400) return `${Math.floor(d / 3600)}時間前`;
+  if (d < 86400 * 14) return `${Math.floor(d / 86400)}日前`;
+  return new Date(iso).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
+}
+const stamp = (iso) => new Date(iso).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+// 最近動いた順（完了は最後）
+function sortCases(list) {
+  return [...list].sort((a, b) =>
+    (a.status === 'done') - (b.status === 'done')
+    || b.updated_at.localeCompare(a.updated_at));
+}
+
+function visible() {
+  const q = state.q.trim().toLowerCase();
+  return state.cases.filter((c) =>
+    (state.showDone || c.status !== 'done')
+    && (!state.mine || c.ball === 'me')
+    && (!state.dir || c.dir === state.dir)
+    && (!q || [c.title, c.client, c.next, c.id, c.project, dirLabel(c.dir)].join(' ').toLowerCase().includes(q)));
+}
+
+// カード: 上辺の線はステータスの色。載せるのはステータス・ボール・更新からの時間・題名・段階メーター・開始日と経過日数・工程
+// （次の一手・依頼元は詳細画面で見る）
+const STAGES = ['investigating', 'implementing', 'review', 'verify', 'release', 'report'];
+// 何段階目まで進んだか。完了は全部、保留は履歴から保留にする前の段階を拾う
+function stageOf(c) {
+  if (c.status === 'done') return STAGES.length;
+  if (c.status !== 'hold') return STAGES.indexOf(c.status) + 1;
+  const m = c.log.map((l) => l.text.match(/^ステータス: (.+) → 保留/)).find(Boolean);
+  const prev = m && state.statuses.find((x) => x.label === m[1])?.id;
+  return Math.max(0, STAGES.indexOf(prev) + 1);
+}
+const shortAgo = (iso) => {
+  const d = (Date.now() - new Date(iso)) / 1000;
+  return d < 60 ? 'now' : d < 3600 ? `${Math.floor(d / 60)}m` : d < 86400 ? `${Math.floor(d / 3600)}h` : `${Math.floor(d / 86400)}d`;
+};
+function card(c, flash, { where = false, status = true } = {}) {
+  const done = c.steps.filter((s) => s.state === 'done').length;
+  const stage = stageOf(c);
+  const meter = `<div class="meter${c.status === 'hold' ? ' hold' : ''}" title="${stage}/${STAGES.length} 段階">${STAGES.map((_, i) => `<i${i < stage ? ' class="on"' : ''}></i>`).join('')}</div>`;
+  // 経過日数はカレンダーの日付の差で数える（昨日作ったものは1日目）
+  const day0 = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+  const days = Math.round((day0(Date.now()) - day0(c.created_at)) / 864e5);
+  const started = new Date(c.created_at).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' });
+  const foot = `<div class="card-foot"><span>開始 ${started} · <b>${days ? `${days}日目` : '今日'}</b></span>${c.steps.length ? `<span>工程 <b>${done}/${c.steps.length}</b></span>` : ''}</div>`;
+  const ball = c.ball === 'me' ? '<span class="cb me">● 自分</span>' : `<span class="cb other">◐ ${esc(c.waiting_on || '相手')}待ち</span>`;
+  return `<article class="card ${c.status === 'done' ? 'done' : ''} ${flash ? 'flash' : ''}" style="--sc:var(--s-${esc(c.status)})" data-id="${esc(c.id)}" tabindex="0">
+    <div class="card-top">${status ? `<span class="cs">${esc(statusOf(c.status).label)}</span>` : ''}${ball}<span class="upd" title="${esc(stamp(c.updated_at))}">${shortAgo(c.updated_at)}</span></div>
+    ${where ? `<div class="where">${esc(dirLabel(c.dir))}${c.project ? ' › ' + esc(c.project) : ''}</div>` : ''}
+    <h3>${esc(c.title)}</h3>
+    ${meter}
+    ${foot}
+  </article>`;
+}
+
+function renderToolbar() {
+  const dirs = [...new Set(state.cases.map((c) => c.dir))].sort(byDir);
+  if (state.dir && !dirs.includes(state.dir)) state.dir = '';
+  // ディレクトリはサイドバーで切り替える。数字は進行中の件数
+  const openIn = (d) => state.cases.filter((c) => c.status !== 'done' && (!d || c.dir === d));
+  const pad = (n) => String(n).padStart(2, '0');
+  $('#dirTabs').innerHTML = [...dirs, ''].map((d, i) => `<button class="ws" role="tab" data-dir="${esc(d)}" aria-selected="${d === state.dir}"${d ? ` style="--c:${dirColor(d, i)}"` : ''}>${esc(d ? dirLabel(d) : 'ALL')}<em>${pad(openIn(d).length)}</em></button>`).join('');
+  $('#links').innerHTML = state.links.map((l) => `<a class="ws link" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.title)}<em>↗</em></a>`).join('');
+  $('#linksSec').hidden = !state.links.length;
+  // VS Code のドック: dirs.json に書いたフォルダごとのアイコン。中の字は英語なら単語の頭文字（SAMPLE APP → SA）、日本語なら1文字目
+  const codeDirs = state.safe ? [] : Object.keys(state.dirLabels);
+  const mono = (s) => (/^[\x20-\x7e]+$/.test(s) ? s.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() : [...s][0]);
+  $('#dock').innerHTML = codeDirs.map((d, i) => { const m = mono(dirLabel(d)); return `<button class="app" data-code="${esc(d)}" style="--c:${dirColor(d, i)}" title="${esc(dirLabel(d))} の VS Code を開く"><span class="ic${m.length > 1 ? ' long' : ''}">${esc(m)}</span><span class="lbl">${esc(dirLabel(d))}</span></button>`; }).join('');
+  $('#dock').hidden = !codeDirs.length;
+  document.body.classList.toggle('has-dock', codeDirs.length > 0);
+  // INBOX: Claude が置いたもの。1時間以内のものは明るく
+  const kindColor = { html: '#5fd0f5', pdf: '#ef6a5a' };
+  $('#inbox').innerHTML = state.inbox.map((f) => `<a class="ws link item${Date.now() - new Date(f.at) < 36e5 ? ' new' : ''}" style="--c:${kindColor[f.kind] || '#c9a3ff'}" href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(f.title)}"><span>${esc(f.title)}</span><em>${f.answered ? '✓ 決定' : esc(ago(f.at))}</em></a>`).join('');
+  $('#inboxSec').hidden = !state.inbox.length;
+  // 判断待ち（まだ決定していないもの）の件数。タブの題名にも出す
+  const pending = state.inbox.filter((f) => !f.answered).length;
+  $('#inboxBadge').hidden = !pending;
+  $('#inboxBadge').textContent = pending;
+  document.title = (pending ? `(${pending}) ` : '') + 'コックピット';
+  // 見出しと計器盤（自分のボール・相手待ち・2週間動いていない）
+  const open = openIn(state.dir);
+  const c = state.dir ? dirColor(state.dir, dirs.indexOf(state.dir)) : 'var(--accent)';
+  $('#mh').style.setProperty('--c', c);
+  $('#mh').innerHTML = `<div class="ttl"><small>WORKSPACE</small><h2>${esc(state.dir ? dirLabel(state.dir) : 'ALL')}</h2></div>
+    <div class="strip"><div><small>MY BALL</small><b class="hl">${open.filter((x) => x.ball === 'me').length}</b></div><div><small>WAITING</small><b>${open.filter((x) => x.ball === 'other').length}</b></div><div><small>STALE 2W</small><b>${open.filter((x) => !isRecent(x)).length}</b></div></div>`;
+  $('#dirList').innerHTML = dirs.map((d) => `<option value="${esc(d)}">${esc(dirLabel(d))}</option>`).join('');
+  const projects = [...new Set(state.cases.map((c) => c.project).filter(Boolean))].sort(byJa);
+  $('#projectList').innerHTML = projects.map((p) => `<option value="${esc(p)}">`).join('');
+}
+
+const groupBy = (list, key) => {
+  const m = new Map();
+  for (const c of list) (m.get(c[key]) || m.set(c[key], []).get(c[key])).push(c);
+  return m;
+};
+
+function renderBoard(changed) {
+  const list = visible();
+  const board = $('#board');
+  document.body.classList.toggle('wide', state.view === 'status');
+  if (!list.length) {
+    board.innerHTML = `<div class="empty">${state.cases.length ? '条件に合う案件はありません' : 'まだ案件がありません。「＋ 案件」か <code>board new</code> で追加できます'}</div>`;
+    return;
+  }
+  const staleLabel = `しばらく動いていない（${state.period === '30' ? '1か月' : '2週間'}以上）`;
+  if (state.view === 'status') {
+    const recent = list.filter(isRecent);
+    const multiDir = new Set(recent.map((c) => c.dir)).size > 1;
+    // 保留と完了は、案件があるときだけ列を出す
+    const cols = state.statuses.filter((s) => !['hold', 'done'].includes(s.id) || recent.some((c) => c.status === s.id));
+    const hidden = list.length - recent.length;
+    board.innerHTML = (hidden ? `<p class="note">ほか ${hidden}件は${staleLabel}ので隠しています。検索すると出ます。</p>` : '')
+      + `<div class="columns">${cols.map((s) => {
+        const items = sortCases(recent.filter((c) => c.status === s.id));
+        // 列の見出しで分かるステータスは出さない。ディレクトリ名は複数あるときだけ
+        return `<section class="col ${items.length ? '' : 'empty'}"><div class="col-h">${pill(s.id)}<span class="cnt">${items.length}</span></div>${items.map((c) => card(c, changed.has(c.id), { where: multiDir, status: false })).join('')}</section>`;
+      }).join('')}</div>`;
+    return;
+  }
+  const countLabel = (items) => {
+    const shown = items.filter(isRecent).length;
+    return shown === items.length ? `${items.length}件` : `${shown}件表示中・全<b>${items.length}</b>件`;
+  };
+  // しばらく動いていないものは1行ずつ（ステータス・題名・最後に動いた日）。押せば詳細が開く
+  const staleList = (items) => `<ul class="sl">${sortCases(items).map((c) => `<li data-open data-id="${esc(c.id)}" tabindex="0">${pill(c.status)}<span class="t">${esc(c.title)}</span><time>${new Date(c.updated_at).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}</time></li>`).join('')}</ul>`;
+  const cards = (items) => items.length ? `<div class="cards">${sortCases(items).map((c) => card(c, changed.has(c.id))).join('')}</div>` : '';
+  // 最近動いたものを上に、しばらく動いていないものは折りたたんで下に置く
+  const block = (items, key) => {
+    const recent = items.filter(isRecent), stale = items.filter((c) => !isRecent(c));
+    return (recent.length ? cards(recent) : '<p class="note">最近動いた案件はありません</p>')
+      + (stale.length ? `<details class="stale" data-key="${esc(key)}" ${state.staleOpen.has(key) ? 'open' : ''}><summary>${staleLabel} ${stale.length}件</summary>${staleList(stale)}</details>` : '');
+  };
+  const dirs = groupBy(list, 'dir');
+  board.innerHTML = [...dirs.keys()].sort(byDir).map((d) => {
+    const items = dirs.get(d);
+    const projects = groupBy(items, 'project');
+    // サブプロジェクトなしの案件をディレクトリ直下に、その後にサブプロジェクトごとの塊を並べる
+    const body = (projects.has('') ? block(projects.get(''), d) : '')
+      + [...projects.keys()].filter(Boolean).sort(byJa).map((p) => `
+        <section class="sub"><div class="sub-h"><h3>${esc(p)}</h3><span class="cnt">${countLabel(projects.get(p))}</span></div>${block(projects.get(p), d + '\t' + p)}</section>`).join('');
+    const head = state.dir ? '' : `<div class="group-h"><h2>${esc(dirLabel(d))}</h2><span class="cnt">${countLabel(items)}</span></div>`;
+    return `<section class="group${state.dir ? ' solo' : ''}">${head}${body}</section>`;
+  }).join('');
+}
+
+/* 詳細 */
+let pendingDrawer = false;
+function renderDrawer(force) {
+  const dr = $('#drawer');
+  const c = state.cases.find((x) => x.id === state.openId);
+  if (!c) { history.replaceState(null, '', location.pathname); hideDetail(); return; }
+  renderMain(c);
+  if (!force && dr.contains(document.activeElement) && document.activeElement.matches('input,textarea,select')) { pendingDrawer = true; return; }
+  pendingDrawer = false;
+  const scroll = dr.scrollTop;
+  // 次の一手を上に置き、その下は「履歴／工程／概要／設定」のタブにする（題名は上のバーに出ているので設定へ）
+  const tab = state.drawerTab || 'log';
+  const tabs = [['log', `履歴 ${c.log.length}`], ['steps', `工程 ${c.steps.length}`], ['summary', '概要'], ['settings', '設定']];
+  const panes = {
+    log: `<input type="text" id="logNew" placeholder="メモを残して Enter">
+      <ol class="tl">${c.log.map((l) => `<li><time>${esc(stamp(l.at))}</time><span>${esc(l.text)}</span></li>`).join('')}</ol>`,
+    steps: `<p class="hint">状態をクリックで 未着手 → 次はここ → 完了</p>
+      <ol class="steps">${c.steps.map((s, i) => `<li class="${s.state}"><span class="no">${i + 1}</span><span class="st-title">${esc(s.title)}</span>${s.who ? `<span class="who">${esc(s.who)}</span>` : ''}<button class="st-btn st-${s.state}" data-step="${i}">${{ todo: '未着手', next: '次はここ', done: '完了' }[s.state]}</button></li>`).join('')}</ol>
+      <input type="text" id="stepNew" placeholder="工程を追加して Enter">`,
+    summary: `<textarea data-f="summary" rows="5" placeholder="何をしている案件か・真因など">${esc(c.summary)}</textarea>
+      ${c.links.length ? `<div class="links">${c.links.map((l) => l.url ? `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>` : `<span>${esc(l.label)}</span>`).join('')}</div>` : ''}
+      ${c.memory && c.report ? `<details class="memory" id="memDetails"><summary>Claude のメモリを見る（${esc(c.memory.split('/').pop())}）</summary><div class="md" id="memText">読み込み中…</div></details>` : ''}`,
+    settings: `<textarea class="title" data-f="title" rows="1" aria-label="案件名">${esc(c.title)}</textarea>
+      <input type="text" data-f="dir" value="${esc(c.dir)}" placeholder="ディレクトリ（~/work/sample-app など）" list="dirList" class="mono">
+      <input type="text" data-f="project" value="${esc(c.project)}" placeholder="サブプロジェクト（任意）" list="projectList">
+      <input type="text" data-f="client" value="${esc(c.client)}" placeholder="顧客・依頼元">
+      <input type="text" data-f="branch" value="${esc(c.branch)}" placeholder="ブランチ" class="mono">
+      <input type="text" data-f="memory" value="${esc(c.memory)}" placeholder="メモリ（~/.claude/projects からの相対パス）" class="mono">
+      <input type="text" data-f="report" value="${esc(c.report)}" placeholder="現在地レポート（~/ から始まる .html のパス）" class="mono">
+      <span class="mono" style="color:var(--ink-3)">id: ${esc(c.id)} ／ 作成 ${esc(stamp(c.created_at))}</span>`,
+  };
+  dr.innerHTML = `<div class="drawer-in">
+    <div class="eyebrow">${[esc(dirLabel(c.dir)), esc(c.project), esc(c.client)].filter(Boolean).join(' ／ ')}${c.branch ? ' ／ <span class="mono">' + esc(c.branch) + '</span>' : ''}</div>
+    <div class="row">
+      <select data-f="status" aria-label="ステータス">${state.statuses.map((s) => `<option value="${s.id}" ${s.id === c.status ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}</select>
+      <div class="seg" role="group" aria-label="ボール">
+        <button data-ball="me" aria-pressed="${c.ball === 'me'}">自分が動く</button>
+        <button data-ball="other" aria-pressed="${c.ball === 'other'}">相手待ち</button>
+      </div>
+      ${c.ball === 'other' ? `<input type="text" data-f="waiting_on" value="${esc(c.waiting_on)}" placeholder="誰を待っている？" style="flex:1">` : ''}
+    </div>
+    <div class="d-sec next-box"><h3>NEXT</h3><textarea data-f="next" rows="2" aria-label="次の一手">${esc(c.next)}</textarea></div>
+    <div class="d-tabs" role="tablist">${tabs.map(([k, label]) => `<button role="tab" data-tab="${k}" aria-selected="${k === tab}">${esc(label)}</button>`).join('')}</div>
+    <div class="d-pane">${panes[tab]}</div>
+  </div>`;
+  dr.scrollTop = scroll;
+  const t = $('#drawer textarea.title');
+  if (t) autosize(t);
+  const md = $('#memDetails');
+  if (md) md.addEventListener('toggle', async () => {
+    if (!md.open) return;
+    const r = await fetch('/api/memory?path=' + encodeURIComponent(c.memory));
+    $('#memText').innerHTML = r.ok ? mdToHtml((await r.json()).text) : 'メモリファイルが見つかりません';
+  }, { once: true });
+}
+
+// Claude のメモリ（Markdown）を読める形にする。冒頭の管理用 frontmatter は出さない
+function mdToHtml(src) {
+  const inline = (t) => esc(t)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[\[([^\]]+)\]\]/g, '<span class="wiki">$1</span>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/(^|[\s(（])(https?:\/\/[^\s)）<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+  const lines = src.replace(/^---\n[\s\S]*?\n---\n?/, '').trim().split('\n');
+  const out = [];
+  let list = null, para = [], code = null, table = [];
+  const flush = () => {
+    if (para.length) { out.push(`<p>${para.map(inline).join('<br>')}</p>`); para = []; }
+    if (list) { out.push(`</${list}>`); list = null; }
+    if (table.length) {
+      const rows = table.filter((r) => !/^\|[\s:|-]+\|$/.test(r)).map((r) => r.replace(/^\||\|$/g, '').split('|'));
+      out.push(`<table>${rows.map((r, i) => `<tr>${r.map((c) => `<${i ? 'td' : 'th'}>${inline(c.trim())}</${i ? 'td' : 'th'}>`).join('')}</tr>`).join('')}</table>`);
+      table = [];
+    }
+  };
+  for (const line of lines) {
+    if (code !== null) {
+      if (/^\s*```/.test(line)) { out.push(`<pre>${esc(code.join('\n'))}</pre>`); code = null; } else code.push(line);
+      continue;
+    }
+    let m;
+    if (/^\s*```/.test(line)) { flush(); code = []; }
+    else if (/^\s*$/.test(line)) flush();
+    else if ((m = line.match(/^(#{1,6})\s+(.*)/))) { flush(); const h = m[1].length <= 2 ? 'h3' : 'h4'; out.push(`<${h}>${inline(m[2])}</${h}>`); }
+    else if (/^\s*\|.*\|\s*$/.test(line)) { if (para.length || list) flush(); table.push(line.trim()); }
+    else if ((m = line.match(/^(\s*)(?:[-*]|(\d+)[.)])\s+(.*)/))) {
+      const tag = m[2] ? 'ol' : 'ul';
+      if (para.length || table.length || (list && list !== tag)) flush();
+      if (!list) { out.push(`<${tag}>`); list = tag; }
+      out.push(`<li${m[1].length >= 2 ? ' class="sub"' : ''}>${inline(m[3])}</li>`);
+    }
+    else { if (list || table.length) flush(); para.push(line.trim()); }
+  }
+  if (code !== null) out.push(`<pre>${esc(code.join('\n'))}</pre>`);
+  flush();
+  return out.join('');
+}
+
+// 左はレポート。案件が更新されるたびに読み直さないよう、id・レポート・メモリが変わったときだけ描き直す
+let mainKey = '';
+let mainAt = 0;
+// レポートのファイルが書き換わったら iframe の中だけ読み直す。URL ごと読み直すのでタブ（#…）は残り、スクロール位置も戻す
+function reloadReport() {
+  const f = $('#dvFrame');
+  const w = f?.contentWindow;
+  if (!w) return;
+  const y = w.scrollY;
+  f.addEventListener('load', () => f.contentWindow.scrollTo(0, y), { once: true });
+  w.location.reload();
+}
+function renderMain(c) {
+  $('#dvTitle').textContent = c.title;
+  // 案件用のヘッダー: 「LIFE ›」と角括弧はその案件のディレクトリの色
+  $('#dvWhere').textContent = `${dirLabel(c.dir)} ›`;
+  const dirs = [...new Set(state.cases.map((x) => x.dir))].sort(byDir);
+  $('#mhCase').style.setProperty('--c', dirColor(c.dir, dirs.indexOf(c.dir)));
+  const key = [c.id, c.report, c.memory].join('|');
+  if (key === mainKey) {
+    if (c.report_at !== mainAt) { mainAt = c.report_at; reloadReport(); }
+    return;
+  }
+  mainKey = key;
+  mainAt = c.report_at;
+  const url = '/report/' + encodeURIComponent(c.id);
+  $('#dvTab').hidden = !c.report;
+  $('#dvTab').href = url;
+  const main = $('#dvMain');
+  if (c.report) {
+    main.innerHTML = `<iframe id="dvFrame" title="現在地レポート" src="${url}"></iframe>`;
+    return;
+  }
+  main.innerHTML = `<div class="dv-empty">
+    <p class="note">この案件にはまだ現在地レポートがありません。右の「設定」でレポートの .html を指定すると、ここに表示されます。</p>
+    ${c.memory ? '<h3>Claude のメモリ</h3><div class="md" id="dvMem">読み込み中…</div>' : ''}
+  </div>`;
+  if (c.memory) {
+    fetch('/api/memory?path=' + encodeURIComponent(c.memory))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { const el = $('#dvMem'); if (el) el.innerHTML = j ? mdToHtml(j.text) : 'メモリファイルが見つかりません'; });
+  }
+}
+
+// 詳細はブラウザの履歴に積み、戻る（スワイプ含む）で一覧へ、進むで詳細へ行き来できるようにする
+history.scrollRestoration = 'manual';
+// 案件名は折り返して全部見せる（1行の入力欄だと長い名前が切れる）
+function autosize(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function openDrawer(id, { push = true } = {}) {
+  if (push && location.hash !== '#' + id) history.pushState({ caseId: id }, '', '#' + id);
+  state.openId = id;
+  mainKey = '';
+  $('#detail').hidden = false;
+  $('#mhCase').hidden = false;
+  $('#mh').hidden = true;
+  $('#board').hidden = true;
+  document.body.classList.add('detail-open');
+  renderDrawer(true);
+  $('#drawer').scrollTop = 0;
+}
+function hideDetail() {
+  state.openId = null;
+  mainKey = '';
+  $('#detail').hidden = true;
+  $('#mhCase').hidden = true;
+  $('#mh').hidden = false;
+  $('#board').hidden = false;
+  $('#dvMain').innerHTML = '';
+  document.body.classList.remove('detail-open');
+}
+function closeDrawer() {
+  if (history.state?.caseId) return history.back(); // popstate 側で閉じる
+  // URL を直接開いたときなど、戻る先が一覧ではない場合は履歴を増やさずに閉じる
+  history.replaceState(null, '', location.pathname);
+  hideDetail();
+}
+window.addEventListener('popstate', () => {
+  const id = decodeURIComponent(location.hash.slice(1));
+  if (id && state.cases.some((c) => c.id === id)) openDrawer(id, { push: false });
+  else hideDetail();
+});
+
+async function patch(id, body) {
+  const r = await fetch('/api/cases/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) { alert((await r.json()).error); return; }
+  const s = $('#saved');
+  if (s) { s.classList.add('show'); setTimeout(() => s.classList.remove('show'), 1200); }
+}
+
+/* イベント */
+$('#board').addEventListener('click', (e) => { const el = e.target.closest('.card,[data-open]'); if (el) openDrawer(el.dataset.id); });
+$('#board').addEventListener('keydown', (e) => { if (e.key === 'Enter') { const el = e.target.closest('.card,[data-open]'); if (el) openDrawer(el.dataset.id); } });
+$('#dvBack').addEventListener('click', closeDrawer);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.openId) closeDrawer(); });
+
+$('#drawer').addEventListener('click', (e) => {
+  const tb = e.target.closest('[data-tab]');
+  if (tb) { state.drawerTab = tb.dataset.tab; renderDrawer(true); return; }
+  const c = state.cases.find((x) => x.id === state.openId);
+  if (!c) return;
+  const b = e.target.closest('[data-ball]');
+  if (b && b.dataset.ball !== c.ball) return patch(c.id, { ball: b.dataset.ball });
+  const st = e.target.closest('[data-step]');
+  if (st) {
+    const order = ['todo', 'next', 'done'];
+    const steps = c.steps.map((s) => ({ ...s }));
+    const s = steps[Number(st.dataset.step)];
+    s.state = order[(order.indexOf(s.state) + 1) % order.length];
+    return patch(c.id, { steps, ...(s.state === 'done' ? { log_text: `工程完了: ${s.title}` } : {}) });
+  }
+});
+$('#drawer').addEventListener('change', (e) => {
+  const f = e.target.dataset.f;
+  const c = state.cases.find((x) => x.id === state.openId);
+  if (!f || !c || c[f] === e.target.value) return;
+  patch(c.id, { [f]: e.target.value });
+});
+$('#drawer').addEventListener('input', (e) => { if (e.target.matches('textarea.title')) autosize(e.target); });
+$('#drawer').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || e.isComposing) return;
+  if (e.target.matches('textarea.title')) { e.preventDefault(); e.target.blur(); return; }
+  const c = state.cases.find((x) => x.id === state.openId);
+  const v = e.target.value?.trim();
+  if (!c || !v) return;
+  if (e.target.id === 'stepNew') { e.target.value = ''; patch(c.id, { steps: [...c.steps, { title: v, who: '', state: 'todo' }] }); }
+  if (e.target.id === 'logNew') { e.target.value = ''; patch(c.id, { log_text: v }); }
+});
+$('#drawer').addEventListener('focusout', () => setTimeout(() => { if (pendingDrawer) renderDrawer(); }, 0));
+
+$('#dock').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-code]');
+  if (!b) return;
+  const r = await fetch('/api/vscode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dir: b.dataset.code }) }).catch(() => null);
+  if (!r?.ok) console.warn('VS Code を開けませんでした', r && (await r.json()).error);
+});
+// ロゴを押すと、今見ているワークスペースの一覧のいちばん上に戻る。詳細を開いていたら閉じる
+$('#homeLink').addEventListener('click', (e) => {
+  e.preventDefault();
+  if (state.openId) { history.replaceState(null, '', location.pathname); hideDetail(); }
+  window.scrollTo(0, 0);
+});
+$('#dirTabs').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (state.openId) { history.replaceState(null, '', location.pathname); hideDetail(); }
+  state.dir = b.dataset.dir; saveUi(); render();
+});
+$('#board').addEventListener('toggle', (e) => {
+  const k = e.target.dataset?.key;
+  if (k == null) return;
+  e.target.open ? state.staleOpen.add(k) : state.staleOpen.delete(k);
+}, true);
+
+
+/* リアルタイム */
+function render(changed = new Set()) {
+  renderToolbar(); renderBoard(changed);
+  if (state.openId) renderDrawer();
+}
+function connect() {
+  const es = new EventSource('/api/events');
+  es.addEventListener('cases', (ev) => {
+    const snap = JSON.parse(ev.data);
+    const changed = new Set();
+    for (const c of snap.cases) {
+      if (!state.first && state.seen.get(c.id) !== c.updated_at) changed.add(c.id);
+      state.seen.set(c.id, c.updated_at);
+    }
+    state.statuses = snap.statuses; state.dirLabels = snap.dirLabels || {}; state.dirColors = snap.dirColors || {}; state.safe = !!snap.safe; state.links = snap.links || []; state.inbox = snap.inbox || []; state.cases = snap.cases;
+    render(changed);
+    if (state.first) {
+      state.first = false;
+      const id = decodeURIComponent(location.hash.slice(1));
+      if (id && state.cases.some((c) => c.id === id)) openDrawer(id, { push: false });
+    }
+  });
+  const sys = (on) => { $('#led').className = `led ${on ? 'on' : 'off'}`; $('#sys').textContent = on ? 'ONLINE' : 'OFFLINE'; $('#sys').className = on ? '' : 'off'; $('#led').title = on ? 'リアルタイム' : 'サーバー停止中（再接続を待っています）'; };
+  es.onopen = () => sys(true);
+  es.onerror = () => sys(false);
+}
+connect();
+setInterval(() => { renderBoard(new Set()); renderToolbar(); }, 60_000); // 「◯分前」を進める
+const tick = () => { $('#clock').textContent = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }); };
+tick(); setInterval(tick, 10_000);
+</script>
+</body>
+</html>
