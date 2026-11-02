@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = path.dirname(fileURLToPath(import.meta.url));
-export const CASES_DIR = process.env.CASE_BOARD_DATA || path.join(ROOT, 'data', 'cases');
+export const CASES_DIR = process.env.COCKPIT_DATA || path.join(ROOT, 'data', 'cases');
 // 案件の memory は ~/.claude/projects/<project>/memory/<file>.md を相対パスで持つ
 export const MEMORY_ROOT = path.join(os.homedir(), '.claude', 'projects');
 // ディレクトリの表示名（任意）。{"~/work/sample-app": "SAMPLE APP"} の形

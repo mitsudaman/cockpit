@@ -4,23 +4,23 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 BOARD="$(cd .. && pwd)"
-APP="$PWD/build/CaseBoard.app"
+APP="$PWD/build/Cockpit.app"
 NODE="$(command -v node)"
 AGENTS="$HOME/Library/LaunchAgents"
-LOG="$HOME/Library/Logs/case-board.log"
+LOG="$HOME/Library/Logs/cockpit.log"
 DOMAIN="gui/$(id -u)"
-SERVER=local.case-board
-MENU=local.case-board.menubar
+SERVER=local.cockpit
+MENU=local.cockpit.menubar
 
 mkdir -p "$APP/Contents/MacOS" "$AGENTS" "$(dirname "$LOG")"
-swiftc -O -swift-version 5 -o "$APP/Contents/MacOS/CaseBoard" CaseBoardMenu.swift
+swiftc -O -swift-version 5 -o "$APP/Contents/MacOS/Cockpit" CockpitMenu.swift
 cat > "$APP/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
   <key>CFBundleIdentifier</key><string>$MENU</string>
-  <key>CFBundleName</key><string>CaseBoard</string>
-  <key>CFBundleExecutable</key><string>CaseBoard</string>
+  <key>CFBundleName</key><string>Cockpit</string>
+  <key>CFBundleExecutable</key><string>Cockpit</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>LSUIElement</key><true/>
 </dict></plist>
@@ -54,7 +54,7 @@ EOF
 
 # 手で起動したサーバーがいると launchd 側がポートを取れないので、先に止める
 for pid in $(lsof -a -c node -tiTCP:4747 -sTCP:LISTEN || true); do kill "$pid"; done
-pkill -x CaseBoard || true
+pkill -x Cockpit || true
 for label in $SERVER $MENU; do launchctl bootout "$DOMAIN/$label" 2>/dev/null || true; done
 sleep 1
 

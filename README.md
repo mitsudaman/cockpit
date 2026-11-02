@@ -1,4 +1,4 @@
-# case-board（案件ボード）
+# cockpit（案件ボード）
 
 案件単位の進捗を1画面で見るローカルツール。どのチャットの Claude からでも CLI で更新でき、開いているブラウザにリアルタイムで反映される。Node.js の標準ライブラリだけで動く（npm install 不要）。
 
@@ -7,14 +7,14 @@
 ## 動かす
 
 ```bash
-git clone https://github.com/mitsudaman/case-board.git
-cd case-board
+git clone https://github.com/mitsudaman/cockpit.git
+cd cockpit
 node server.mjs                # http://localhost:4747/ （Ctrl+C で止める）
 bash menubar/install.sh        # 任意: launchd で常駐させ、メニューバーから起動・停止する（初回とサーバー設定を変えたとき）
 ```
 
-- 常駐させると launchd（`local.case-board`）で動く。オン/オフはメニューバーのアイコンから。止めた状態はログインし直しても保たれる
-- メニューバー: ボードを開く／サーバーの起動・停止・再起動／ログ（`~/Library/Logs/case-board.log`）
+- 常駐させると launchd（`local.cockpit`）で動く。オン/オフはメニューバーのアイコンから。止めた状態はログインし直しても保たれる
+- メニューバー: ボードを開く／サーバーの起動・停止・再起動／ログ（`~/Library/Logs/cockpit.log`）
 - `server.mjs` や `lib.mjs` を変えたら、サーバーを再起動して反映する（`index.html` は再読み込みだけでよい）
 
 ## 安全モード（セキュリティの厳しいMac向け）
@@ -62,4 +62,5 @@ node $B link <id> "PR #123" https://...
 - ball: `me`（自分が動く） / `other`（相手待ち。`waiting_on` に誰か）
 - `memory` に `~/.claude/projects` からの相対パスを入れると、詳細画面で Claude のメモリ本文を読める
 - `report` にホーム配下の `.html` のパス（`~/` 始まり可）を入れると、詳細画面の「現在地レポートを開く」で全画面表示できる（`/report/<id>` で配信）
+  - 置き場所は基本 `data/reports/<id>/現在地.html`。カードと同じくボードのデータとして Mac ごとに持ち、git に入れない。案件のリポジトリに資料として残したいものだけ、その案件のフォルダに置く
   - レポートと同じフォルダの直下にある資料（HTML・画像・PDF）は `/report/<id>/<ファイル名>` で開ける。サブフォルダ・ドットファイル・それ以外の種類は出さない。レポート側は相対リンク（`<a data-sibling href="資料.html">`）のままにして、ボードで開いたときだけ JS でこの URL に向け直す

@@ -347,10 +347,10 @@ const state = {
   view: 'dir', mine: false, showDone: false, dir: '', links: [], inbox: [], period: '14', q: '', openId: null, staleOpen: new Set(),
 };
 try {
-  const ui = JSON.parse(localStorage.getItem('case-board-ui') || '{}');
+  const ui = JSON.parse((localStorage.getItem('cockpit-ui') || localStorage.getItem('case-board-ui')) || '{}');
   state.dir = ui.dir || '';
 } catch {}
-const saveUi = () => { try { localStorage.setItem('case-board-ui', JSON.stringify({ view: state.view, mine: state.mine, showDone: state.showDone, dir: state.dir, period: state.period })); } catch {} };
+const saveUi = () => { try { localStorage.setItem('cockpit-ui', JSON.stringify({ view: state.view, mine: state.mine, showDone: state.showDone, dir: state.dir, period: state.period })); } catch {} };
 // 検索中は期間に関係なく探せるようにする
 const isRecent = (c) => state.period === 'all' || state.q.trim() !== '' || (Date.now() - new Date(c.updated_at)) / 864e5 <= Number(state.period);
 

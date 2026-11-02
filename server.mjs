@@ -210,4 +210,4 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, HOST, () => console.log(`case-board: http://localhost:${PORT}/  data: ${CASES_DIR}`));
+server.listen(PORT, HOST, () => console.log(`cockpit: http://localhost:${PORT}/  data: ${CASES_DIR}`));

@@ -1,11 +1,11 @@
 // 案件ボードのメニューバーアプリ。サーバー（launchd エージェント）の起動・停止とボードを開くだけを担う
 import Cocoa
 
-let serverLabel = "local.case-board"
-let menuLabel = "local.case-board.menubar"
+let serverLabel = "local.cockpit"
+let menuLabel = "local.cockpit.menubar"
 let domain = "gui/\(getuid())"
 let agentsDir = NSHomeDirectory() + "/Library/LaunchAgents"
-let logPath = NSHomeDirectory() + "/Library/Logs/case-board.log"
+let logPath = NSHomeDirectory() + "/Library/Logs/cockpit.log"
 let boardURL = URL(string: "http://localhost:4747/")!
 
 @discardableResult
